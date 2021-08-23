@@ -4,6 +4,9 @@ const dbDebugger = require("debug")("app:db");
 const Joi = require("joi");
 Joi.objectId = require("joi-objectid")(Joi);
 
+require("express-async-errors");
+const winston = require("winston");
+const error = require("./middleware/error");
 const mongoose = require("mongoose");
 const config = require("config");
 const morgan = require("morgan");
@@ -19,6 +22,8 @@ const home = require("./routes/home");
 const customers = require("./routes/customers");
 const express = require("express");
 const app = express();
+
+winston.add(winston.transports.File, { filename: "logfile.log" });
 
 app.set("view engine", "pug");
 // app.set('views', './views'); //default
@@ -41,6 +46,9 @@ app.use("/api/genres", genres);
 app.use("/", home);
 app.use("/api/customers", customers);
 
+// express error middleware
+app.use(error);
+
 // COnfiguration - reads from files under Config folder based on environment set for NODE_ENV
 console.log(`Application: ${config.get("name")}`);
 console.log(`Mail server: ${config.get("mail.host")}`);
@@ -58,8 +66,8 @@ if (app.get("env") === "development") {
 //Db work
 dbDebugger("Connected to database");
 
-app.use(logger);
-app.use(authenticate);
+// app.use(logger);
+// app.use(authenticate);
 
 if (!config.get("jwtPrivateKey")) {
   console.error("FATAL ERROR: jwtPrivateKey is not defined");
